@@ -23,7 +23,7 @@ istioctl dashboard grafana
 
 ## Grafana Dashboard Walkthrough
 Create kubernetes dashboard on grafana by:
-+ icon > type `3119` dashboard ID > Select ‘Prometheus’ as the endpoint under prometheus data sources drop down.
++ icon > type `3119 or 8685` dashboard ID > Select ‘Prometheus’ as the endpoint under prometheus data sources drop down.
 
 ![alt text](../imgs/grafana_setting.png "grafana setting")
 
