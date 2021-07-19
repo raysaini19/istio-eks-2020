@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: httpbin-org
+spec:
+  hosts: # destinations that these routing rules apply to. VirtualService must be bound to the gateway and must have one or more hosts that match the hosts specified in a server
+  - httpbin.org
+  # gateways: # names of gateways and sidecars that should apply these routes
+  # - bookinfo-gateway # <----- don't select ingress gateway, as we want to apply timeout config for sidecar envoy proxy, not edge proxy for ingress
+  http: 
+  - timeout: 3s
+    route:
+      - destination:
+          host: httpbin.org # <---- destinaton can be internal or external, as long as in service registry
+        weight: 100

@@ -1,0 +1,22 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-path-host
+  namespace: istio-system # If set to root (i.e. "istio-sytem") namespace, the policy applies to all namespaces in a mesh.
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: DENY # reject requests with matching with rules below
+  rules:
+  - from:
+    - source:
+        notRequestPrincipals: ["*"] # <---- if request principals (valid JWT) not available in header. Ref: https://istio.io/latest/docs/tasks/security/authentication/authn-policy/#require-a-valid-token
+    to:
+    - operation:
+        # these are AND condition (i.e. test.sni.com/headers)
+        paths: ["/headers"] # <---- deny if invalid JWT token for /headers
+        hosts: ["test.sni.com"] 
+    # this is OR condition (i.e. either */headers OR test.sni.com/*)
+    # - operation:
+    #     hosts: ["test.sni.com"] 

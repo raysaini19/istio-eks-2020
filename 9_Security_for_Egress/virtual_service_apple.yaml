@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: apple-com
+spec:
+  hosts:
+  - "*.apple.com"
+  http:
+  - match:
+    - port: 80 # <----- match with port 80 request, and send it to DestinationRule's subset called "tls-origination" at port 443
+    route:
+    - destination:
+        host: www.apple.com
+        subset: tls-origination
+        port:
+          number: 443

@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: productpage
+spec:
+  host: productpage # name of a service from the service registry
+  trafficPolicy: # service-level routing policy
+      connectionPool: # ref: https://istio.io/latest/docs/reference/config/networking/destination-rule/#ConnectionPoolSettings
+        http:
+          http2MaxRequests: 1 # limit of 1 concurrent HTTP2 requests
+          maxRequestsPerConnection: 1
+        tcp:
+          maxConnections: 2 # connection pool size of 2 HTTP1 connections
+          connectTimeout: 30ms
+          tcpKeepalive:
+            time: 7200s
+            interval: 75s
+      outlierDetection: # <-----  ref: https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection
+        consecutiveErrors: 1
+        interval: 1s # scans every 1s
+        baseEjectionTime: 3m 

@@ -1,0 +1,54 @@
+eksctl create cluster \
+    --name eks-from-eksctl \
+    --version 1.20 \
+    --region us-west-2 \
+    --nodegroup-name workers \
+    --node-type t3.large \
+    --nodes 1 \
+    --nodes-min 1 \
+    --nodes-max 2 \
+    --ssh-access \
+    --ssh-public-key ~/.ssh/eks-demo.pem.pub \
+    --managed
+
+# ch2 install istio
+istioctl install --set profile=demo
+kubectl label namespace default istio-injection=enabled
+
+# ch4 deploy apps
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/examples/master/guestbook-go/redis-master-controller.json
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/examples/master/guestbook-go/redis-master-service.json
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/examples/master/guestbook-go/redis-slave-controller.json
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/examples/master/guestbook-go/redis-slave-service.json
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/examples/master/guestbook-go/guestbook-controller.json
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/examples/master/guestbook-go/guestbook-service.json
+
+echo $(kubectl  get svc guestbook | awk '{ print $4 }' | tail -1):$(kubectl  get svc guestbook | awk '{ print $5 }' | tail -1 | cut -d ":" -f 1)
+
+kubectl delete svc guestbook
+kubectl apply -f 4_Deploy_Apps/service_guestbook_nodeport.yaml
+curl -v $(kubectl  get svc nginx-ingress-controller-controller -n nginx-ingress-controller | awk '{ print $4 }' | tail -1)
+
+
+# ch5 gateway and virtual service
+kubectl apply -f 5_Expose_Service/gateway_guestbook.yaml
+kubectl apply -f 5_Expose_Service/virtualservice_guestbook.yaml
+
+curl -v $(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+
+kubectl apply -f 5_Expose_Service/bookinfo.yaml 
+kubectl apply -f 5_Expose_Service/gateway_bookinfo.yaml
+kubectl apply -f 5_Expose_Service/virtualservice_bookinfo.yaml 
+
+curl -v $(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/productpage
+
+
+
+
+# uninstall istio in k8s cluster
+kubectl delete namespace istio-system
+
+
+# CLEANUP
+eksctl delete cluster --name eks-from-eksctl --region us-west-2

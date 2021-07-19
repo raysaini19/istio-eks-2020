@@ -1,0 +1,49 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: kiali-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https-kiali
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: gateway-cert-aws-elb-dns
+    hosts:
+    - kiali.a5a1acc36239d46038f3dd828465c946-706040707.us-west-2.elb.amazonaws.com
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: kiali-vs
+  namespace: istio-system
+spec:
+  hosts:
+  - kiali.a5a1acc36239d46038f3dd828465c946-706040707.us-west-2.elb.amazonaws.com
+  gateways:
+  - kiali-gateway
+  http:
+  - route:
+    - destination:
+        # host: kiali
+        host: httpbin.default.svc.cluster.local
+        port:
+          # number: 20001
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: kiali
+  namespace: istio-system
+spec:
+  host: kiali
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+---

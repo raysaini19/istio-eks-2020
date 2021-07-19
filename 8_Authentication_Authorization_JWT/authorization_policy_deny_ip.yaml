@@ -1,0 +1,17 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-ip
+  namespace: istio-system # If set to root (i.e. "istio-sytem") namespace, the policy applies to all namespaces in a mesh.
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: DENY # reject requests with matching with rules below
+  rules:
+  - from:
+    - source:
+        ipBlocks: ["192.168.69.89"] # <--- deny request from this source IP
+  # - to:
+  #   - operation:
+  #       paths: ["/headers"]

@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: guestbook-virtualservice
+  # namespace: default
+spec:
+  hosts:
+  - "*"
+  gateways: # using gateways field, it'll be exposed externally
+  - guestbook-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: guestbook # specify service name
+        port:
+          number: 3000

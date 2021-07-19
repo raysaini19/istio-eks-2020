@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: curl
+  name: curl
+  namespace: non-istio
+spec:
+  containers:
+  - args:
+    - /bin/sh
+    - -c
+    - sleep infinity
+    image: curlimages/curl
+    name: curl
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never

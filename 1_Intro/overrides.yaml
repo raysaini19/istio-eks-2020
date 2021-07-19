@@ -1,0 +1,112 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  profile: demo
+  values:
+    gateways:
+      istio-ingressgateway:
+        sds:
+          enabled: true
+  components: # ref: https://istio.io/latest/docs/reference/config/istio.operator.v1alpha1/#IstioOperatorSpec
+    # sidecarInjector:
+    #   enabled: true
+    ingressGateways:
+    - enabled: true
+      name: istio-ingressgateway
+      k8s:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        service:
+          ports:
+          - name: status-port
+            port: 15020
+            targetPort: 15020
+          - name: http2
+            port: 80
+            targetPort: 8080
+          - name: https
+            port: 443
+            targetPort: 8443
+          - name: tcp
+            port: 31400
+            targetPort: 31400
+          - name: tls
+            port: 15443
+            targetPort: 15443      
+        serviceAnnotations:
+          # enable ELB access log
+          # ref: https://www.giantswarm.io/blog/load-balancer-service-use-cases-on-aws
+          service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+          # The interval for publishing the access logs (can be 5 or 60 minutes).
+          service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "5"
+          service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "s3-ue1-peerwell-api-infra-prod-elb-access-logs"
+          service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "public-elb" # NOTE: bucket and bucket policy should be precreated, otherwise facing error "Unable to update load balancer attributes during attribute sync: "InvalidConfigurationRequest: Access Denied for bucket: s3-ue1-peerwell-api-infra-prod-elb-access-logs. Please check S3bucket permission\n\tstatus code: 409"
+    - enabled: true
+      name: istio-private-ingressgateway
+      label:
+        istio: privateingressgateway # this will be needed as gateway will look for this selector
+        app: istio-private-ingressgateway
+      k8s:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        service:
+          ports:
+          - name: status-port
+            port: 15020
+            targetPort: 15020
+          - name: http2
+            port: 80
+            targetPort: 8080
+          - name: https
+            port: 443
+            targetPort: 8443
+          - name: tcp
+            port: 31400
+            targetPort: 31400
+          - name: tls
+            port: 15443
+            targetPort: 15443      
+        serviceAnnotations:
+          # ref: https://medium.com/swlh/public-and-private-istio-ingress-gateways-on-aws-f968783d62fe
+          service.beta.kubernetes.io/aws-load-balancer-internal: "true" # make this CLB private. Refs for service annotations for AWS ELB: https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#aws, https://docs.aws.amazon.com/eks/latest/userguide/load-balancing.html
+          # enable ELB access log
+          # ref: https://www.giantswarm.io/blog/load-balancer-service-use-cases-on-aws
+          service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+          # The interval for publishing the access logs (can be 5 or 60 minutes).
+          service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "60"
+          service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "s3-ue1-peerwell-api-infra-prod-elb-access-logs"
+          service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "internal-elb" # NOTE: bucket and bucket policy should be precreated, otherwise facing error "Unable to update load balancer attributes during attribute sync: "InvalidConfigurationRequest: Access Denied for bucket: s3-ue1-peerwell-api-infra-prod-elb-access-logs. Please check S3bucket permission\n\tstatus code: 409"
+  values:
+    gateways:
+      istio-ingressgateway: # for internal ELB
+        applicationPorts: ""
+        autoscaleEnabled: false
+        debug: info
+        domain: ""
+        env: {}
+        meshExpansionPorts:
+        - name: tcp-pilot-grpc-tls
+          port: 15011
+          targetPort: 15011
+        - name: tcp-istiod
+          port: 15012
+          targetPort: 15012
+        - name: tcp-citadel-grpc-tls
+          port: 8060
+          targetPort: 8060
+        - name: tcp-dns-tls
+          port: 853
+          targetPort: 8853
+        name: istio-private-ingressgateway
+        secretVolumes:
+        - mountPath: /etc/istio/ingressgateway-certs
+          name: ingressgateway-certs
+          secretName: istio-ingressgateway-certs
+        - mountPath: /etc/istio/ingressgateway-ca-certs
+          name: ingressgateway-ca-certs
+          secretName: istio-ingressgateway-ca-certs
+        type: LoadBalancer

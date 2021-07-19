@@ -1,0 +1,18 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-namespace
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+  action: DENY
+  rules:
+  - from:
+    - source:
+        namespaces: ["non-istio"]
+    to:
+    - operation:
+        methods: ["GET","POST"]
+    

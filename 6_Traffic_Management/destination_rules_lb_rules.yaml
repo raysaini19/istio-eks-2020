@@ -1,0 +1,71 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule # defines policies that apply to traffic intended for a service after routing has occurred
+metadata:
+  name: productpage
+spec:
+  host: productpage # name of a service from the service registry
+  subsets: # define list of subsets
+  - name: v1 # subset name
+    labels:
+      version: v1 # label attached to Pod definition
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  trafficPolicy: # service-level routing policy
+      loadBalancer:
+        simple: RANDOM
+  subsets: # define list of subsets
+  - name: v1 # subset name
+    labels:
+      version: v1  # label attached to Pod definition
+    trafficPolicy: # Version specific policies can be specified by defining a named subset and overriding the settings specified at the service level
+      loadBalancer:
+        simple: LEAST_CONN
+  - name: v2
+    labels:
+      version: v2
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+  - name: v3
+    labels:
+      version: v3
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: ratings
+spec:
+  host: ratings
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+  - name: v2-mysql
+    labels:
+      version: v2-mysql
+  - name: v2-mysql-vm
+    labels:
+      version: v2-mysql-vm
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: details
+spec:
+  host: details
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+---

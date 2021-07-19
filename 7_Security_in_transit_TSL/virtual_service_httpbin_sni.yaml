@@ -1,0 +1,29 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: httpbin
+spec:
+  hosts:
+  - "*.elb.amazonaws.com"
+  - httpbin
+  - "*.sni.com" # <----- apply virtual service config to this host as well
+  - "httpbin.example.com"
+  gateways: 
+  - bookinfo-gateway
+  - mesh # applies to all the sidecars in the mesh. The reserved word mesh is used to imply all the sidecars in the mesh. When gateway field is omitted, the default gateway (mesh) will be used, which would apply the rule to all sidecars in the mesh. If a list of gateway names is provided, the rules will apply only to the gateways. To apply the rules to both gateways and sidecars, specify mesh as one of the gateway names. Ref: https://istio.io/latest/docs/reference/config/networking/virtual-service/#VirtualService
+  http: # L7 load balancing by http path and host, just like K8s ingress resource
+  - match:
+    - uri:
+        exact: /
+      ignoreUriCase: true
+    - uri:
+        exact: /ip
+      ignoreUriCase: true
+    - uri:
+        exact: /headers
+      ignoreUriCase: true
+    route:
+    - destination:
+        host: httpbin.default.svc.cluster.local  # service name should be either short one or FQDN, NOT partial one like "httpbin.default"
+        port:
+          number: 80

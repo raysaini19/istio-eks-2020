@@ -1,0 +1,32 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ratings
+spec:
+  hosts: # destinations that these routing rules apply to. VirtualService must be bound to the gateway and must have one or more hosts that match the hosts specified in a server
+  - ratings
+  # gateways: # names of gateways and sidecars that should apply these routes
+  # - bookinfo-gateway # Don't ONLY USE this gateway as "ratings" k8s service is used internally by productpage service, so this VS rule should be applied to Envoy sidecar proxy inside ratings pod, not edge proxy in gateway pod. 
+  # - mesh # applies to all the sidecars in the mesh. The reserved word mesh is used to imply all the sidecars in the mesh. When gateway field is omitted, the default gateway (mesh) will be used, which would apply the rule to all sidecars in the mesh. If a list of gateway names is provided, the rules will apply only to the gateways. To apply the rules to both gateways and sidecars, specify mesh as one of the gateway names. Ref: https://istio.io/latest/docs/reference/config/networking/virtual-service/#VirtualService
+  http: # L7 load balancing by http path and host, just like K8s ingress resource
+  - retries:
+      attempts: 3 # default 1. The number of retries for a given request. The interval between retries will be determined automatically (25ms+). Actual number of retries attempted depends on the request timeout
+      perTryTimeout: 3s
+      retryOn: 5xx,gateway-error,reset,connect-failure,refused-stream,retriable-4xx # https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on
+    match:
+    - headers: # Note: The keys uri, scheme, method, and authority will be ignored.
+        end-user: # WARNING: merely passing this key-value pair in curl won't work as productpage service won't propagate custom header attributes to review service! You need to login as a user Ref: https://stackoverflow.com/a/50878208/1528958
+          exact: tester
+    fault: 
+      delay: # inject latency only for "tester" user
+        percentage:
+          value: 100.0 # Percentage number in the range of [0.0, 100.0]. Ref: https://istio.io/latest/docs/reference/config/networking/virtual-service/#Percent
+        fixedDelay: 15s
+    route:
+    - destination:
+        host: ratings
+        subset: v1
+  - route:
+    - destination:
+        host: ratings
+        subset: v1

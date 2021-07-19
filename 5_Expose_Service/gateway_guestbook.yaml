@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: guestbook-gateway
+  # namespace: default
+spec:
+  selector:
+    istio: ingressgateway # use default istio gateway proxy in `istio-system` namespace, which exposes it using K8s service of LoadBalancer, which creates AWS ELB
+  servers: # defines L7 host, port, and protocol
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts: # host in http header
+    - "*"
